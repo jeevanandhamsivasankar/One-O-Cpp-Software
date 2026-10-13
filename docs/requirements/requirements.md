@@ -118,3 +118,6 @@ Flag `[A:D-xx]` = depends on an ASSUMPTION decision in docs/product/decisions.md
 | REQ-405 | The release shall have no open high-severity security findings. | US-024 | T | |
 | REQ-406 | Only required network/bus interfaces shall be exposed; Bluetooth pairing shall require user confirmation. | US-023, US-018 | I | |
 | REQ-407 | Vehicle write commands shall be validated by the vehicle signal service against an allow-list of settable signals. | US-011, US-023 | T | A:D-06 |
+| REQ-408 | Driving lockout shall be enforced service-side: services (e.g. oneo-system, oneo-phoned) shall reject pairing and settings-edit commands received while locked, regardless of the caller or HMI state. | US-022, threat T-11 (also T-01) | T (SEC-4) | A:D-08 |
+| REQ-409 | USB shall use a device-class allow-list limited to Mass Storage (MSC); all other classes (HID, serial, gadget, etc.) shall be rejected, and USB media shall be mounted ro,nosuid,nodev,noexec with limited filesystem types. | US-013, US-023, threat T-08 | T (SEC-6) | A:D-13 |
+| REQ-410 | In production images, debug interfaces (UART console login, JTAG, adb/ssh/dropbear, USB gadget, U-Boot console) shall be disabled or locked, with no empty or default root password. | US-023, threat T-15 | T (SEC-9), I | A:D-11 |

@@ -22,6 +22,14 @@ Run agents in a phase in parallel when their tickets don't touch the same files.
 - Agents reply in ≤5 lines; details live in files. Don't re-read files to double-check an agent's work; review via tech-lead.
 - Use haiku/sonnet agents for routine work; reserve opus agents (architects, tech-lead) for design and review.
 
+## Build (Windows host, portable tools in %USERPROFILE%\tools)
+```powershell
+$t="$env:USERPROFILE\tools"; $env:PATH="$t\cmake\bin;$t\llvm-mingw\bin;$t\git\cmd;$env:PATH"
+cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_CXX_COMPILER=clang++
+cmake --build build; ctest --test-dir build --output-on-failure
+```
+Linux-only code (D-Bus, CAN, systemd) builds only on Linux/Yocto: put it behind CMake `if(UNIX AND NOT APPLE)` and give it a host stub/mock so Windows builds and unit tests still pass. No Linux host here: bitbake is not run.
+
 ## Board
 - Tickets: `docs/board/T-<nnn>-<slug>.md` from `docs/board/TEMPLATE.md`. One owner per ticket.
 - `docs/board/status.md` is the single source of progress (delivery-manager owns it).

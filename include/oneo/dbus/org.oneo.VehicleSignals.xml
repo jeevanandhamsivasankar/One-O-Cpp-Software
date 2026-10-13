@@ -1,0 +1,54 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!--
+  org.oneo.VehicleSignals v1 - owner oneo-vehicled (user oneo-veh), path /org/oneo/VehicleSignals.
+  Source of truth for sdbus-c++ adapter and QtDBus proxy codegen (ADR-002). C++ API: oneo/vehicle/vehicle_signals.hpp.
+  Every signal property is a struct (v value, b valid, t timestamp_us):
+    value      variant; type per property noted below (d = double, i = int32, b = bool)
+    valid      false if never received or validity timeout elapsed (REQ-025)
+    timestamp  CLOCK_MONOTONIC microseconds of last reception
+  PropertiesChanged is coalesced per 50 ms window (REQ-024 budget 200 ms).
+  Errors: org.oneo.Error.{InvalidArgument,NotAllowed,DrivingLocked,Unavailable,Timeout,Busy,Internal}.
+-->
+<node name="/org/oneo/VehicleSignals">
+  <interface name="org.oneo.VehicleSignals">
+    <property name="Version" type="u" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
+    </property>
+
+    <!-- Read-only signals (REQ-201) -->
+    <property name="VehicleSpeed" type="(vbt)" access="read"/>   <!-- d km/h -->
+    <property name="Gear" type="(vbt)" access="read"/>           <!-- i 0=P 1=R 2=N 3=D 15=unknown -->
+    <property name="DoorOpen" type="(vbt)" access="read"/>       <!-- i bitmask FL=1 FR=2 RL=4 RR=8 Trunk=16 Hood=32 -->
+    <property name="LampWarnings" type="(vbt)" access="read"/>   <!-- i bitmask LowBeam=1 HighBeam=2 Indicator=4 Brake=8 Fog=16 -->
+    <property name="Ignition" type="(vbt)" access="read"/>       <!-- i 0=Off 1=Acc 2=On 3=Start -->
+    <property name="AmbientDark" type="(vbt)" access="read"/>    <!-- b -->
+    <property name="HeadlightsOn" type="(vbt)" access="read"/>   <!-- b -->
+
+    <!-- Settable signals: actual vehicle state (feedback), not the requested value (REQ-027) -->
+    <property name="LightingMode" type="(vbt)" access="read"/>     <!-- i 0=Off 1=Auto 2=Parking 3=LowBeam -->
+    <property name="DistanceUnit" type="(vbt)" access="read"/>     <!-- i 0=km 1=miles -->
+    <property name="ClimateTempUnit" type="(vbt)" access="read"/>  <!-- i 0=C 1=F -->
+    <property name="ClimateMode" type="(vbt)" access="read"/>      <!-- i 0=Off 1=Auto 2=Manual 3=Defrost -->
+
+    <!-- Returns all signal properties in one call (HMI reconnect). Keys = property names. -->
+    <method name="GetAll">
+      <arg name="signals" type="a{s(vbt)}" direction="out"/>
+    </method>
+
+    <!--
+      Request a vehicle setting (REQ-027, REQ-407, REQ-408). While org.oneo.System
+      DrivingLocked is true or unknown (System not on bus / no value yet), every request
+      is rejected with org.oneo.Error.DrivingLocked, regardless of caller. name must be one of LightingMode,
+      DistanceUnit, ClimateTempUnit, ClimateMode (allow-list) else NotAllowed; value out of
+      range -> InvalidArgument. Reply is deferred until vehicle feedback confirms the value
+      (success) or the confirmation timeout (default 1 s) elapses -> org.oneo.Error.Timeout.
+      Concurrent request for the same name -> Busy. Callers must use an async call with
+      a D-Bus timeout >= 2 s.
+    -->
+    <method name="SetSetting">
+      <arg name="name" type="s" direction="in"/>
+      <arg name="value" type="i" direction="in"/>
+    </method>
+  </interface>
+</node>

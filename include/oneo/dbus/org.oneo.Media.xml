@@ -1,0 +1,55 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!--
+  org.oneo.Media v1 - owner oneo-mediad (user oneo-media), path /org/oneo/Media.
+  C++ API: oneo/media/media_service.hpp. Enum encodings:
+    Source        y 0=None 1=Usb 2=Bluetooth
+    PlaybackState y 0=Stopped 1=Playing 2=Paused 3=Buffering 4=Error
+    BrowseView    y 0=Folder 1=Artist 2=Album
+  Track a{sv} keys: title s, artist s, album s, durationMs t, itemId s (absent key = unknown).
+  Errors: org.oneo.Error.{InvalidArgument,NotFound,Unavailable,Busy,Timeout,IoError,Cancelled,Internal}.
+-->
+<node name="/org/oneo/Media">
+  <interface name="org.oneo.Media">
+    <property name="Version" type="u" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
+    </property>
+    <property name="Source" type="y" access="read"/>
+    <property name="AvailableSources" type="ay" access="read"/>   <!-- REQ-031: USB present, BT A2DP connected -->
+    <property name="PlaybackState" type="y" access="read"/>
+    <property name="Track" type="a{sv}" access="read"/>           <!-- REQ-034/035 -->
+    <property name="PositionMs" type="t" access="read"/>          <!-- changes emitted at most 1 Hz -->
+    <property name="Volume" type="y" access="read"/>              <!-- 0..100, persisted by org.oneo.System (REQ-037) -->
+    <property name="LibraryScanning" type="b" access="read"/>
+    <property name="LibraryTrackCount" type="u" access="read"/>
+
+    <method name="Play"/>
+    <method name="Pause"/>
+    <method name="Next"/>
+    <method name="Previous"/>
+
+    <!-- Reply when the new source is playing or failed (REQ-036 audible within 2 s). -->
+    <method name="SetSource">
+      <arg name="source" type="y" direction="in"/>
+    </method>
+    <method name="SetVolume">
+      <arg name="volume" type="y" direction="in"/>
+    </method>
+
+    <!-- USB browse (REQ-030). container "" = root of view. items: (id, label, playable). -->
+    <method name="Browse">
+      <arg name="view" type="y" direction="in"/>
+      <arg name="container" type="s" direction="in"/>
+      <arg name="offset" type="u" direction="in"/>
+      <arg name="count" type="u" direction="in"/>
+      <arg name="items" type="a(ssb)" direction="out"/>
+      <arg name="total" type="u" direction="out"/>
+    </method>
+    <method name="PlayItem">
+      <arg name="itemId" type="s" direction="in"/>
+    </method>
+
+    <!-- Library content changed (USB inserted/removed, scan finished); clients re-browse. -->
+    <signal name="LibraryChanged"/>
+  </interface>
+</node>

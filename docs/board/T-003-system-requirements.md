@@ -18,3 +18,5 @@ Derive numbered, testable system requirements for the MVP from the backlog and t
 ## Log
 <!-- Owners append one line each: Status / Request / Blocked / Review -->
 Status: done - requirements.md (REQ-001..407, assumptions flagged A:D-xx) and traceability.md written; all 22 R1 stories covered. Awaiting product-owner review (Phase 1 gate).
+Change: REQ-408..410 added, approved by user
+Review: approved - 22 R1 stories (roadmap lists 22, not 24) all traced incl. all 17 Must; derived REQ-050, REQ-109, REQ-407 accepted.

@@ -1,0 +1,60 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!--
+  org.oneo.System v1 - owner oneo-system (user oneo-sys), path /org/oneo/System.
+  C++ API: oneo/system/system_service.hpp; setting keys in oneo/system/types.hpp.
+  Setting values are variants of b, x (int64), d or s.
+  Encodings:
+    Theme        y 0=Day 1=Night
+    ServiceHealth (s unit, y state 0=Unknown 1=Running 2=Restarting 3=Failed, u restarts, s lastFault)
+  D-Bus policy: SetSetting callable by oneo-hmi, oneo-media (media.* keys only),
+  oneo-phone (phone.* keys only; key scope enforced in the service);
+  ReportFault callable by root (oneo-fault@.service) only (REQ-406).
+  Errors: org.oneo.Error.{InvalidArgument,NotAllowed,DrivingLocked,NotFound,IoError,Internal}.
+-->
+<node name="/org/oneo/System">
+  <interface name="org.oneo.System">
+    <property name="Version" type="u" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
+    </property>
+    <!-- Driving lockout (REQ-048..050, REQ-401): true when speed > threshold or speed invalid. -->
+    <property name="DrivingLocked" type="b" access="read"/>
+    <property name="LockoutThresholdKph" type="d" access="read"/>
+    <property name="Locale" type="s" access="read"/>   <!-- "en-US" | "de-DE" (REQ-017) -->
+    <property name="Units" type="s" access="read"/>    <!-- "metric" | "imperial" (REQ-018) -->
+    <property name="ThemeMode" type="s" access="read"/> <!-- "auto" | "day" | "night" -->
+    <property name="Theme" type="y" access="read"/>    <!-- resolved (REQ-016) -->
+    <property name="Faulted" type="b" access="read"/>  <!-- any unit over restart limit (REQ-007) -->
+
+    <method name="GetSetting">
+      <arg name="key" type="s" direction="in"/>
+      <arg name="value" type="v" direction="out"/>
+    </method>
+    <!-- Persisted atomically, debounced (REQ-108/109). Per-key lockout rule, independent of
+         caller (REQ-048, REQ-408): while DrivingLocked, keys hmi.* and safety.lockoutKph are
+         rejected with org.oneo.Error.DrivingLocked; media.volume, media.lastSource and
+         phone.lastDevice are exempt. See lockedWhileDriving() in oneo/system/types.hpp. -->
+    <method name="SetSetting">
+      <arg name="key" type="s" direction="in"/>
+      <arg name="value" type="v" direction="in"/>
+    </method>
+    <method name="GetHealth">
+      <arg name="services" type="a(syus)" direction="out"/>
+    </method>
+    <method name="GetVersions">
+      <arg name="versions" type="a{ss}" direction="out"/>
+    </method>
+    <method name="ReportFault">
+      <arg name="unit" type="s" direction="in"/>
+      <arg name="reason" type="s" direction="in"/>
+    </method>
+
+    <signal name="SettingChanged">
+      <arg name="key" type="s"/>
+      <arg name="value" type="v"/>
+    </signal>
+    <signal name="HealthChanged">
+      <arg name="services" type="a(syus)"/>
+    </signal>
+  </interface>
+</node>

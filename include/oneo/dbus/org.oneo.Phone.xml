@@ -1,0 +1,79 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<!--
+  org.oneo.Phone v1 - owner oneo-phoned (user oneo-phone), path /org/oneo/Phone.
+  C++ API: oneo/phone/phone_service.hpp. Encodings:
+    Device        (s address, s name, b paired, b connected, b hfp, b a2dp)
+    PairingState  y 0=Idle 1=Discovering 2=AwaitingConfirmation 3=Pairing 4=Failed
+    Call          (u id, y state, s number, s displayName)
+                  state y 0=Idle 1=Incoming 2=Dialing 3=Alerting 4=Active 5=Held 6=Ended
+    Contact       (s id, s name, as numbers)
+    CallLogEntry  (s number, s name, y direction 0=In 1=Out 2=Missed, x unixTimeSec)
+  Lockout (REQ-401, REQ-408): StartDiscovery, Pair, ConfirmPairing and RemoveDevice reply
+  org.oneo.Error.DrivingLocked while org.oneo.System DrivingLocked is true or unknown,
+  regardless of caller. Connect, call and contact methods are allowed while driving.
+  Errors: org.oneo.Error.{InvalidArgument,NotAllowed,DrivingLocked,NotFound,Unavailable,Busy,Timeout,Cancelled,Internal}.
+-->
+<node name="/org/oneo/Phone">
+  <interface name="org.oneo.Phone">
+    <property name="Version" type="u" access="read">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
+    </property>
+    <property name="Devices" type="a(ssbbbb)" access="read"/>   <!-- paired (max 5, REQ-039) + discovered -->
+    <property name="PairingState" type="y" access="read"/>
+    <property name="Calls" type="a(uyss)" access="read"/>
+    <property name="ContactCount" type="u" access="read"/>
+
+    <method name="StartDiscovery"/>
+    <method name="StopDiscovery"/>
+    <!-- Reply after pairing completes or fails; user confirmation via ConfirmPairing (REQ-038, REQ-406). -->
+    <method name="Pair">
+      <arg name="address" type="s" direction="in"/>
+    </method>
+    <method name="ConfirmPairing">
+      <arg name="address" type="s" direction="in"/>
+      <arg name="accept" type="b" direction="in"/>
+    </method>
+    <method name="RemoveDevice">
+      <arg name="address" type="s" direction="in"/>
+    </method>
+    <method name="Connect">
+      <arg name="address" type="s" direction="in"/>
+    </method>
+
+    <method name="Dial">
+      <arg name="number" type="s" direction="in"/>
+      <arg name="callId" type="u" direction="out"/>
+    </method>
+    <method name="Answer">
+      <arg name="callId" type="u" direction="in"/>
+    </method>
+    <method name="Reject">
+      <arg name="callId" type="u" direction="in"/>
+    </method>
+    <method name="Hangup">
+      <arg name="callId" type="u" direction="in"/>
+    </method>
+
+    <method name="SearchContacts">
+      <arg name="query" type="s" direction="in"/>
+      <arg name="limit" type="u" direction="in"/>
+      <arg name="contacts" type="a(ssas)" direction="out"/>
+    </method>
+    <method name="GetCallLog">
+      <arg name="limit" type="u" direction="in"/>
+      <arg name="entries" type="a(ssyx)" direction="out"/>
+    </method>
+
+    <!-- SSP numeric comparison: HMI shows passkey (6 digits) and calls ConfirmPairing. -->
+    <signal name="PairingConfirmationRequested">
+      <arg name="address" type="s"/>
+      <arg name="name" type="s"/>
+      <arg name="passkey" type="u"/>
+    </signal>
+    <!-- PBAP sync finished (REQ-046). -->
+    <signal name="ContactsSynced">
+      <arg name="count" type="u"/>
+    </signal>
+  </interface>
+</node>
